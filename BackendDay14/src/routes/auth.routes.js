@@ -47,4 +47,34 @@ router.get('/user', async (req, res) => {
     }       
 });
 
+router.post('/login', async(req,res)=> {
+    const { username, password } = req.body;
+    const user = await userModel.findOne({ username })
+
+    if (!user) {
+        return res.status(400).json({message: 'Invalid username or user account not found'});
+    }
+
+    const isPasswordValid = user.password === password;
+
+    if (!isPasswordValid) {
+        return res.status(400).json({message: 'Invalid password'});
+    }
+
+    const token = jwt.sign({ id: user._id}, process.env.JWT_SECRET);
+
+    res.cookie('token', token, {
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+    });
+
+    res.status(200).json({ message: 'user login successful', user });
+
+});
+
+//  User Logout
+router.get('/logout', (req,res) => {
+    res.clearCookie('token');
+    res.status(200).json({ message: 'User logged out successfully' });
+});
+
 module.exports = router;
